@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, PageIntro } from "@/components/SiteLayout";
 import { PerfumeCard } from "@/components/PerfumeCard";
 import { useI18n } from "@/lib/i18n";
-import { useAdmin } from "@/lib/admin-store";
+import { usePerfumes } from "@/lib/data";
 
 export const Route = createFileRoute("/perfumes")({
   head: () => ({
@@ -26,14 +26,14 @@ export const Route = createFileRoute("/perfumes")({
 
 function PerfumesPage() {
   const { t } = useI18n();
-  const { state } = useAdmin();
+  const { data: perfumes = [] } = usePerfumes(true);
 
   return (
     <SiteLayout>
       <PageIntro title={t("perfumes.title")} text={t("perfumes.intro")} />
       <section className="mx-auto max-w-5xl px-6 pb-20 sm:pb-24">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-7">
-          {state.products.map((perfume) => (
+          {perfumes.map((perfume) => (
             <PerfumeCard key={perfume.id} perfume={perfume} />
           ))}
         </div>

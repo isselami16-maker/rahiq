@@ -5,7 +5,7 @@ import { PriceTag } from "@/components/PriceTag";
 import { OrderForm } from "@/components/OrderForm";
 import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
-import { useAdmin, effectivePrice, oldPrice, type AdminOffer } from "@/lib/admin-store";
+import { useOffers } from "@/lib/data";
 
 export const Route = createFileRoute("/offers/$offerId")({
   head: () => ({
@@ -24,46 +24,32 @@ export const Route = createFileRoute("/offers/$offerId")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  beforeLoad: ({ params, context }) => {
-    void context;
-    void params;
-  },
   component: OfferDetailsPage,
 });
 
 function OfferDetailsPage() {
   const { offerId } = Route.useParams();
-  const { state } = useAdmin();
+  const { data: offers = [] } = useOffers(false);
   const localize = useLocalized();
   const { t } = useI18n();
 
-  const offer = state.offers.find((o) => o.id === offerId);
-  if (!offer) {
-    throw notFound();
-  }
+  const offer = offers.find((o) => o.id === offerId);
+  if (!offer) throw notFound();
 
-  return <OfferDetailsContent offer={offer} localize={localize} t={t} />;
-}
-
-function OfferDetailsContent({
-  offer,
-  localize,
-  t,
-}: {
-  offer: AdminOffer;
-  localize: (v: { ar: string; en: string }) => string;
-  t: (k: string) => string;
-}) {
-  const name = localize(offer.name);
-  const description = localize(offer.description);
-  const longDesc = offer.longDescription ? localize(offer.longDescription) : "";
-  const price = effectivePrice(offer);
-  const oldP = oldPrice(offer);
+  const price =
+    offer.discount?.enabled && offer.discount.newPrice > 0
+      ? offer.discount.newPrice
+      : offer.price;
+  const oldP = offer.discount?.enabled ? offer.discount.oldPrice : offer.oldPrice;
 
   function scrollToOrderForm() {
     const el = document.getElementById("order-form-section");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
+  const name = localize(offer.name);
+  const description = localize(offer.description);
+  const longDesc = offer.longDescription ? localize(offer.longDescription) : "";
 
   return (
     <SiteLayout>
@@ -156,7 +142,6 @@ function OfferDetailsContent({
         </div>
       </section>
 
-      {/* ─── Order Form (Phase 4) ─── */}
       <section id="order-form-section" className="mx-auto max-w-2xl scroll-mt-20 px-6 pb-28 sm:pb-32">
         <h2 className="mb-8 text-center text-base font-bold tracking-[0.14em] text-muted-foreground">
           {t("offerDetails.orderForm")}

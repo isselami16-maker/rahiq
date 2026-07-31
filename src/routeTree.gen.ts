@@ -15,10 +15,13 @@ import { Route as DiscountsRouteImport } from './routes/discounts'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as PerfumesRouteImport } from './routes/perfumes'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAlgeriaRouteImport } from './routes/admin/algeria'
 import { Route as AdminContactsRouteImport } from './routes/admin/contacts'
 import { Route as AdminDeliveryRouteImport } from './routes/admin/delivery'
 import { Route as AdminDiscountsRouteImport } from './routes/admin/discounts'
 import { Route as AdminEmailRouteImport } from './routes/admin/email'
+import { Route as AdminFooterRouteImport } from './routes/admin/footer'
+import { Route as AdminMediaRouteImport } from './routes/admin/media'
 import { Route as AdminOffersRouteImport } from './routes/admin/offers'
 import { Route as AdminProductsRouteImport } from './routes/admin/products'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
@@ -54,6 +57,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAlgeriaRoute = AdminAlgeriaRouteImport.update({
+  id: '/admin/algeria',
+  path: '/admin/algeria',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminContactsRoute = AdminContactsRouteImport.update({
   id: '/admin/contacts',
   path: '/admin/contacts',
@@ -72,6 +80,16 @@ const AdminDiscountsRoute = AdminDiscountsRouteImport.update({
 const AdminEmailRoute = AdminEmailRouteImport.update({
   id: '/admin/email',
   path: '/admin/email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFooterRoute = AdminFooterRouteImport.update({
+  id: '/admin/footer',
+  path: '/admin/footer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMediaRoute = AdminMediaRouteImport.update({
+  id: '/admin/media',
+  path: '/admin/media',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminOffersRoute = AdminOffersRouteImport.update({
@@ -101,10 +119,13 @@ export interface FileRoutesByFullPath {
   '/discounts': typeof DiscountsRoute
   '/offers': typeof OffersRouteWithChildren
   '/perfumes': typeof PerfumesRoute
+  '/admin/algeria': typeof AdminAlgeriaRoute
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/discounts': typeof AdminDiscountsRoute
   '/admin/email': typeof AdminEmailRoute
+  '/admin/footer': typeof AdminFooterRoute
+  '/admin/media': typeof AdminMediaRoute
   '/admin/offers': typeof AdminOffersRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -117,10 +138,13 @@ export interface FileRoutesByTo {
   '/discounts': typeof DiscountsRoute
   '/offers': typeof OffersRouteWithChildren
   '/perfumes': typeof PerfumesRoute
+  '/admin/algeria': typeof AdminAlgeriaRoute
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/discounts': typeof AdminDiscountsRoute
   '/admin/email': typeof AdminEmailRoute
+  '/admin/footer': typeof AdminFooterRoute
+  '/admin/media': typeof AdminMediaRoute
   '/admin/offers': typeof AdminOffersRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -134,10 +158,13 @@ export interface FileRoutesById {
   '/discounts': typeof DiscountsRoute
   '/offers': typeof OffersRouteWithChildren
   '/perfumes': typeof PerfumesRoute
+  '/admin/algeria': typeof AdminAlgeriaRoute
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/discounts': typeof AdminDiscountsRoute
   '/admin/email': typeof AdminEmailRoute
+  '/admin/footer': typeof AdminFooterRoute
+  '/admin/media': typeof AdminMediaRoute
   '/admin/offers': typeof AdminOffersRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -152,10 +179,13 @@ export interface FileRouteTypes {
     | '/discounts'
     | '/offers'
     | '/perfumes'
+    | '/admin/algeria'
     | '/admin/contacts'
     | '/admin/delivery'
     | '/admin/discounts'
     | '/admin/email'
+    | '/admin/footer'
+    | '/admin/media'
     | '/admin/offers'
     | '/admin/products'
     | '/admin/settings'
@@ -168,10 +198,13 @@ export interface FileRouteTypes {
     | '/discounts'
     | '/offers'
     | '/perfumes'
+    | '/admin/algeria'
     | '/admin/contacts'
     | '/admin/delivery'
     | '/admin/discounts'
     | '/admin/email'
+    | '/admin/footer'
+    | '/admin/media'
     | '/admin/offers'
     | '/admin/products'
     | '/admin/settings'
@@ -184,10 +217,13 @@ export interface FileRouteTypes {
     | '/discounts'
     | '/offers'
     | '/perfumes'
+    | '/admin/algeria'
     | '/admin/contacts'
     | '/admin/delivery'
     | '/admin/discounts'
     | '/admin/email'
+    | '/admin/footer'
+    | '/admin/media'
     | '/admin/offers'
     | '/admin/products'
     | '/admin/settings'
@@ -201,10 +237,13 @@ export interface RootRouteChildren {
   DiscountsRoute: typeof DiscountsRoute
   OffersRoute: typeof OffersRouteWithChildren
   PerfumesRoute: typeof PerfumesRoute
+  AdminAlgeriaRoute: typeof AdminAlgeriaRoute
   AdminContactsRoute: typeof AdminContactsRoute
   AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminDiscountsRoute: typeof AdminDiscountsRoute
   AdminEmailRoute: typeof AdminEmailRoute
+  AdminFooterRoute: typeof AdminFooterRoute
+  AdminMediaRoute: typeof AdminMediaRoute
   AdminOffersRoute: typeof AdminOffersRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -255,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/algeria': {
+      id: '/admin/algeria'
+      path: '/admin/algeria'
+      fullPath: '/admin/algeria'
+      preLoaderRoute: typeof AdminAlgeriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/contacts': {
       id: '/admin/contacts'
       path: '/admin/contacts'
@@ -281,6 +327,20 @@ declare module '@tanstack/react-router' {
       path: '/admin/email'
       fullPath: '/admin/email'
       preLoaderRoute: typeof AdminEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/footer': {
+      id: '/admin/footer'
+      path: '/admin/footer'
+      fullPath: '/admin/footer'
+      preLoaderRoute: typeof AdminFooterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/media': {
+      id: '/admin/media'
+      path: '/admin/media'
+      fullPath: '/admin/media'
+      preLoaderRoute: typeof AdminMediaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/offers': {
@@ -331,10 +391,13 @@ const rootRouteChildren: RootRouteChildren = {
   DiscountsRoute: DiscountsRoute,
   OffersRoute: OffersRouteWithChildren,
   PerfumesRoute: PerfumesRoute,
+  AdminAlgeriaRoute: AdminAlgeriaRoute,
   AdminContactsRoute: AdminContactsRoute,
   AdminDeliveryRoute: AdminDeliveryRoute,
   AdminDiscountsRoute: AdminDiscountsRoute,
   AdminEmailRoute: AdminEmailRoute,
+  AdminFooterRoute: AdminFooterRoute,
+  AdminMediaRoute: AdminMediaRoute,
   AdminOffersRoute: AdminOffersRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminSettingsRoute: AdminSettingsRoute,

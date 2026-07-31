@@ -1,14 +1,30 @@
 import { useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { useAdmin, effectivePrice, type AdminOffer } from "@/lib/admin-store";
-import { WILAYAS } from "@/lib/algeria";
+import { useDeliveryPricing, useWilayasForOrderForm } from "@/lib/data";
 import { formatPrice } from "@/lib/currency";
 import { sendOrderEmail } from "@/lib/email-service";
 import { cn } from "@/lib/utils";
 
-export function OrderForm({ offer }: { offer: AdminOffer }) {
+type OfferProp = {
+  id: string;
+  name: { ar: string; en: string };
+  price: number;
+  freeDelivery: boolean;
+  maxQuantity?: number;
+  discount?: { enabled: boolean; newPrice: number };
+};
+
+function getEffectivePrice(offer: OfferProp) {
+  if (offer.discount?.enabled && offer.discount.newPrice > 0) {
+    return offer.discount.newPrice;
+  }
+  return offer.price;
+}
+
+export function OrderForm({ offer }: { offer: OfferProp }) {
   const { t, lang } = useI18n();
-  const { state } = useAdmin();
+  const { data: deliveryPricing = {} } = useDeliveryPricing();
+  const { data: wilayas = [] } = useWilayasForOrderForm();
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -21,22 +37,27 @@ export function OrderForm({ offer }: { offer: AdminOffer }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
-  const unitPrice = effectivePrice(offer);
+  const unitPrice = getEffectivePrice(offer);
   const isFreeDelivery = offer.freeDelivery;
   const maxQty = offer.maxQuantity ?? 99;
 
   const deliveryPrice = useMemo(() => {
     if (!wilayaCode) return null;
     if (isFreeDelivery) return 0;
-    const pricing = state.deliveryPricing[wilayaCode];
+    const pricing = deliveryPricing[wilayaCode];
     if (!pricing) return null;
     return deliveryType === "home" ? pricing.home : pricing.office;
-  }, [wilayaCode, deliveryType, isFreeDelivery, state.deliveryPricing]);
+  }, [wilayaCode, deliveryType, isFreeDelivery, deliveryPricing]);
 
   const subtotal = unitPrice * quantity;
   const total = deliveryPrice != null ? subtotal + deliveryPrice : subtotal;
 
-  const selectedWilaya = WILAYAS.find((w) => w.code === wilayaCode);
+  const selectedWilaya = wilayas.find((w: { code: string }) => w.code === wilayaCode) as {
+    code: string;
+    name_ar: string;
+    name_en: string;
+    municipalities: { id: string; name_ar: string; name_en: string; is_enabled: boolean }[];
+  } | undefined;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,12 +65,18 @@ export function OrderForm({ offer }: { offer: AdminOffer }) {
     if (!fullName || !phone || !wilayaCode || !effectiveCommune) return;
 
     setSubmitting(true);
+    const wilayaLabel = selectedWilaya
+      ? lang === "ar"
+        ? selectedWilaya.name_ar
+        : selectedWilaya.name_en
+      : wilayaCode;
+
     const order = {
       offerId: offer.id,
       offerName: lang === "ar" ? offer.name.ar : offer.name.en,
       fullName,
       phone,
-      wilaya: selectedWilaya ? (lang === "ar" ? selectedWilaya.nameAr : selectedWilaya.nameEn) : wilayaCode,
+      wilaya: wilayaLabel,
       commune: effectiveCommune,
       deliveryType: deliveryType === "home" ? t("order.deliveryHome") : t("order.deliveryOffice"),
       quantity,
@@ -81,7 +108,6 @@ export function OrderForm({ offer }: { offer: AdminOffer }) {
 
   return (
     <div className="space-y-8">
-      {/* ─── Form Fields ─── */}
       <form id="order-form" onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className={labelClass} htmlFor="fullName">
@@ -133,9 +159,9 @@ export function OrderForm({ offer }: { offer: AdminOffer }) {
             <option value="" disabled>
               {t("order.wilayaPlaceholder")}
             </option>
-            {WILAYAS.map((w) => (
+            {wilayas.map((w: { code: string; name_ar: string; name_en: string }) => (
               <option key={w.code} value={w.code}>
-                {w.code} {lang === "ar" ? w.nameAr : w.nameEn}
+                {w.code} {lang === "ar" ? w.name_ar : w.name_en}
               </option>
             ))}
           </select>
@@ -156,11 +182,13 @@ export function OrderForm({ offer }: { offer: AdminOffer }) {
             <option value="" disabled>
               {t("order.communePlaceholder")}
             </option>
-            {selectedWilaya?.communes.map((c, i) => (
-              <option key={i} value={lang === "ar" ? c.nameAr : c.nameEn}>
-                {lang === "ar" ? c.nameAr : c.nameEn}
-              </option>
-            ))}
+            {selectedWilaya?.municipalities
+              .filter((m) => m.is_enabled)
+              .map((m) => (
+                <option key={m.id} value={lang === "ar" ? m.name_ar : m.name_en}>
+                  {lang === "ar" ? m.name_ar : m.name_en}
+                </option>
+              ))}
           </select>
           <button
             type="button"
@@ -238,9 +266,7 @@ export function OrderForm({ offer }: { offer: AdminOffer }) {
           {t("summary.title")}
         </h3>
         <span className="mx-auto mt-5 block h-px w-10 bg-primary/50" aria-hidden="true" />
-
         <dl className="mt-6 space-y-4">
-          {/* Unit Price × Quantity = Price */}
           <div className="flex items-center justify-between text-base font-normal">
             <dt className="flex items-center gap-2 text-muted-foreground">
               <span>{t("summary.unitPrice")}</span>
@@ -249,8 +275,6 @@ export function OrderForm({ offer }: { offer: AdminOffer }) {
             </dt>
             <dd className="tabular-nums text-foreground">{formatPrice(subtotal)}</dd>
           </div>
-
-          {/* Delivery */}
           <div className="flex items-center justify-between text-base font-normal">
             <dt className="text-muted-foreground">{t("summary.delivery")}</dt>
             <dd className="tabular-nums text-foreground">
@@ -261,11 +285,7 @@ export function OrderForm({ offer }: { offer: AdminOffer }) {
                   : formatPrice(deliveryPrice)}
             </dd>
           </div>
-
-          {/* Divider */}
           <div className="h-px bg-border/60" />
-
-          {/* Total */}
           <div className="flex items-center justify-between text-base font-normal">
             <dt className="tracking-[0.1em] text-foreground">{t("summary.total")}</dt>
             <dd className="text-2xl font-bold tabular-nums text-primary">
@@ -275,7 +295,6 @@ export function OrderForm({ offer }: { offer: AdminOffer }) {
         </dl>
       </div>
 
-      {/* ─── Result message ─── */}
       {result && (
         <p
           className={cn(

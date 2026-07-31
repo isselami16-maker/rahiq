@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, PageIntro } from "@/components/SiteLayout";
 import { OfferCard } from "@/components/OfferCard";
 import { useI18n } from "@/lib/i18n";
-import { useAdmin, selectDiscountedOffers } from "@/lib/admin-store";
+import { useDiscountedOffers } from "@/lib/data";
 
 export const Route = createFileRoute("/discounts")({
   head: () => ({
@@ -26,8 +26,7 @@ export const Route = createFileRoute("/discounts")({
 
 function DiscountsPage() {
   const { t } = useI18n();
-  const { state } = useAdmin();
-  const discounted = selectDiscountedOffers(state.offers);
+  const { data: discounted = [] } = useDiscountedOffers();
 
   return (
     <SiteLayout>

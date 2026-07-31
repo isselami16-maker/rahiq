@@ -1,22 +1,35 @@
 import { Link } from "@tanstack/react-router";
-import type { AdminOffer } from "@/lib/admin-store";
-import { effectivePrice, oldPrice } from "@/lib/admin-store";
 import { useLocalized } from "@/lib/use-localized";
 import { useI18n } from "@/lib/i18n";
 import { PriceTag } from "@/components/PriceTag";
 import { cn } from "@/lib/utils";
+import type { Offer } from "@/lib/catalog";
+
+type OfferWithDiscount = Offer & {
+  freeDelivery?: boolean;
+  discount?: { enabled: boolean; newPrice: number; oldPrice: number; showCountdown?: boolean };
+};
+
+function effectivePrice(offer: OfferWithDiscount) {
+  if (offer.discount?.enabled && offer.discount.newPrice > 0) return offer.discount.newPrice;
+  return offer.price;
+}
+
+function getOldPrice(offer: OfferWithDiscount) {
+  if (offer.discount?.enabled) return offer.discount.oldPrice;
+  return offer.oldPrice;
+}
 
 /**
  * A clickable offer/discount card: image, name, short description, price,
- * and a visible "Order" button. The whole card links to the Offer Details page.
- * For discounts, an oldPrice is shown struck-through, a discount badge appears,
- * and a countdown placeholder slot is rendered below the price.
+ * and a visible "Order" button. For discounts, oldPrice is shown struck-through,
+ * a discount badge appears, and a countdown placeholder slot is rendered.
  */
 export function OfferCard({
   offer,
   withCountdown = false,
 }: {
-  offer: AdminOffer;
+  offer: OfferWithDiscount;
   withCountdown?: boolean;
 }) {
   const localize = useLocalized();
@@ -24,7 +37,7 @@ export function OfferCard({
   const name = localize(offer.name);
   const description = localize(offer.description);
   const price = effectivePrice(offer);
-  const oldP = oldPrice(offer);
+  const oldP = getOldPrice(offer);
 
   const discountPct =
     oldP != null && oldP > price ? Math.round(((oldP - price) / oldP) * 100) : 0;
