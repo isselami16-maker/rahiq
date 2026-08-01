@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { WILAYAS } from "@/lib/algeria";
 import {
   AdminLayout,
   AdminPageHeader,
@@ -16,11 +17,9 @@ export const Route = createFileRoute("/admin/delivery")({
   component: AdminDeliveryPage,
 });
 
-type WilayaRow = {
+type DeliveryPriceRow = {
   id: string;
-  code: string;
-  name_ar: string;
-  name_en: string;
+  wilaya_code: string;
   home_delivery_price: number;
   office_delivery_price: number;
   free_delivery: boolean;
@@ -31,15 +30,15 @@ function AdminDeliveryPage() {
   const [search, setSearch] = useState("");
   const [saved, setSaved] = useState<string | null>(null);
 
-  const { data: wilayas = [], isLoading } = useQuery({
-    queryKey: ["admin-wilayas"],
+  const { data: prices = [], isLoading } = useQuery({
+    queryKey: ["admin-delivery-prices"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("wilayas")
-        .select("id, code, name_ar, name_en, home_delivery_price, office_delivery_price, free_delivery")
-        .order("display_order");
+        .from("delivery_prices")
+        .select("id, wilaya_code, home_delivery_price, office_delivery_price, free_delivery")
+        .order("wilaya_code");
       if (error) throw error;
-      return data as WilayaRow[];
+      return data as DeliveryPriceRow[];
     },
   });
 
@@ -56,13 +55,13 @@ function AdminDeliveryPage() {
       free_delivery: boolean;
     }) => {
       const { error } = await supabase
-        .from("wilayas")
+        .from("delivery_prices")
         .update({ home_delivery_price, office_delivery_price, free_delivery })
         .eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ["admin-wilayas"] });
+      qc.invalidateQueries({ queryKey: ["admin-delivery-prices"] });
       setSaved(variables.id);
       setTimeout(() => setSaved(null), 2000);
     },
@@ -72,34 +71,39 @@ function AdminDeliveryPage() {
     Record<string, { home: number; office: number; free: boolean }>
   >({});
 
-  function getPrice(w: WilayaRow) {
-    return localPrices[w.id] ?? { home: w.home_delivery_price, office: w.office_delivery_price, free: w.free_delivery };
+  function getPrice(p: DeliveryPriceRow) {
+    return localPrices[p.id] ?? { home: p.home_delivery_price, office: p.office_delivery_price, free: p.free_delivery };
   }
 
   function updateLocal(id: string, patch: Partial<{ home: number; office: number; free: boolean }>) {
-    const w = wilayas.find((w) => w.id === id);
-    if (!w) return;
+    const row = prices.find((p) => p.id === id);
+    if (!row) return;
     setLocalPrices((prev) => ({
       ...prev,
-      [id]: { ...getPrice(w), ...patch },
+      [id]: { ...getPrice(row), ...patch },
     }));
   }
 
-  function saveWilaya(w: WilayaRow) {
-    const p = getPrice(w);
+  function savePrice(p: DeliveryPriceRow) {
+    const val = getPrice(p);
     updateMutation.mutate({
-      id: w.id,
-      home_delivery_price: p.home,
-      office_delivery_price: p.office,
-      free_delivery: p.free,
+      id: p.id,
+      home_delivery_price: val.home,
+      office_delivery_price: val.office,
+      free_delivery: val.free,
     });
   }
 
-  const filtered = wilayas.filter(
-    (w) =>
-      w.name_ar.includes(search) ||
-      w.name_en.toLowerCase().includes(search.toLowerCase()) ||
-      w.code.includes(search),
+  const wilayaNameByCode = (code: string) => {
+    const w = WILAYAS.find((w) => w.code === code);
+    return w ? w.nameAr : code;
+  };
+
+  const filtered = prices.filter(
+    (p) => {
+      const name = wilayaNameByCode(p.wilaya_code);
+      return name.includes(search) || p.wilaya_code.includes(search);
+    },
   );
 
   return (
@@ -126,23 +130,23 @@ function AdminDeliveryPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((w) => {
-            const p = getPrice(w);
-            const isSaving = updateMutation.isPending && updateMutation.variables?.id === w.id;
-            const isSaved = saved === w.id;
+          {filtered.map((p) => {
+            const val = getPrice(p);
+            const isSaving = updateMutation.isPending && updateMutation.variables?.id === p.id;
+            const isSaved = saved === p.id;
             return (
-              <AdminCard key={w.id} className="flex flex-col gap-3 sm:flex-row sm:items-center py-3">
+              <AdminCard key={p.id} className="flex flex-col gap-3 sm:flex-row sm:items-center py-3">
                 <span className="w-40 shrink-0 text-sm text-foreground font-medium">
-                  <span className="text-muted-foreground text-xs">{w.code}</span>{" "}
-                  {w.name_ar}
+                  <span className="text-muted-foreground text-xs">{p.wilaya_code}</span>{" "}
+                  {wilayaNameByCode(p.wilaya_code)}
                 </span>
                 <div className="flex flex-1 flex-wrap items-center gap-4">
                   <label className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Home (DA)</span>
                     <AdminInput
                       type="number"
-                      value={p.home}
-                      onChange={(e) => updateLocal(w.id, { home: Number(e.target.value) })}
+                      value={val.home}
+                      onChange={(e) => updateLocal(p.id, { home: Number(e.target.value) })}
                       className="w-24"
                     />
                   </label>
@@ -150,16 +154,16 @@ function AdminDeliveryPage() {
                     <span className="text-xs text-muted-foreground">Office (DA)</span>
                     <AdminInput
                       type="number"
-                      value={p.office}
-                      onChange={(e) => updateLocal(w.id, { office: Number(e.target.value) })}
+                      value={val.office}
+                      onChange={(e) => updateLocal(p.id, { office: Number(e.target.value) })}
                       className="w-24"
                     />
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={p.free}
-                      onChange={(e) => updateLocal(w.id, { free: e.target.checked })}
+                      checked={val.free}
+                      onChange={(e) => updateLocal(p.id, { free: e.target.checked })}
                       className="h-4 w-4 accent-primary"
                     />
                     <span className="text-xs text-muted-foreground">Free</span>
@@ -170,7 +174,7 @@ function AdminDeliveryPage() {
                   <AdminButton
                     variant="ghost"
                     size="sm"
-                    onClick={() => saveWilaya(w)}
+                    onClick={() => savePrice(p)}
                     disabled={isSaving}
                   >
                     {isSaving ? "Saving..." : "Save"}

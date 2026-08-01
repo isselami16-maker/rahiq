@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import { useDeliveryPricing, useWilayasForOrderForm } from "@/lib/data";
+import { useDeliveryPrices } from "@/lib/data";
+import { WILAYAS } from "@/lib/algeria";
 import { formatPrice } from "@/lib/currency";
 import { sendOrderEmail } from "@/lib/email-service";
 import { cn } from "@/lib/utils";
@@ -23,8 +24,8 @@ function getEffectivePrice(offer: OfferProp) {
 
 export function OrderForm({ offer }: { offer: OfferProp }) {
   const { t, lang } = useI18n();
-  const { data: deliveryPricing = {} } = useDeliveryPricing();
-  const { data: wilayas = [] } = useWilayasForOrderForm();
+  const { data: deliveryPricing = {} } = useDeliveryPrices();
+  const wilayas = WILAYAS;
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -52,12 +53,7 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
   const subtotal = unitPrice * quantity;
   const total = deliveryPrice != null ? subtotal + deliveryPrice : subtotal;
 
-  const selectedWilaya = wilayas.find((w: { code: string }) => w.code === wilayaCode) as {
-    code: string;
-    name_ar: string;
-    name_en: string;
-    municipalities: { id: string; name_ar: string; name_en: string; is_enabled: boolean }[];
-  } | undefined;
+  const selectedWilaya = wilayas.find((w) => w.code === wilayaCode);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,8 +63,8 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
     setSubmitting(true);
     const wilayaLabel = selectedWilaya
       ? lang === "ar"
-        ? selectedWilaya.name_ar
-        : selectedWilaya.name_en
+        ? selectedWilaya.nameAr
+        : selectedWilaya.nameEn
       : wilayaCode;
 
     const order = {
@@ -159,9 +155,9 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
             <option value="" disabled>
               {t("order.wilayaPlaceholder")}
             </option>
-            {wilayas.map((w: { code: string; name_ar: string; name_en: string }) => (
+            {wilayas.map((w) => (
               <option key={w.code} value={w.code}>
-                {w.code} {lang === "ar" ? w.name_ar : w.name_en}
+                {w.code} {lang === "ar" ? w.nameAr : w.nameEn}
               </option>
             ))}
           </select>
@@ -182,13 +178,11 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
             <option value="" disabled>
               {t("order.communePlaceholder")}
             </option>
-            {selectedWilaya?.municipalities
-              .filter((m) => m.is_enabled)
-              .map((m) => (
-                <option key={m.id} value={lang === "ar" ? m.name_ar : m.name_en}>
-                  {lang === "ar" ? m.name_ar : m.name_en}
-                </option>
-              ))}
+            {selectedWilaya?.communes.map((m) => (
+              <option key={m.nameAr} value={lang === "ar" ? m.nameAr : m.nameEn}>
+                {lang === "ar" ? m.nameAr : m.nameEn}
+              </option>
+            ))}
           </select>
           <button
             type="button"

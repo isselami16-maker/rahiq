@@ -192,44 +192,26 @@ export function useContactSettings() {
   });
 }
 
-// ─── Delivery Pricing ─────────────────────────────────────────────────────────
+// ─── Delivery Prices (Supabase) ──────────────────────────────────────────────
 
-export function useDeliveryPricing() {
+export function useDeliveryPrices() {
   return useQuery({
-    queryKey: ["delivery-pricing"],
+    queryKey: ["delivery-prices"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("wilayas")
-        .select("code, home_delivery_price, office_delivery_price, free_delivery")
-        .order("display_order");
+        .from("delivery_prices")
+        .select("wilaya_code, home_delivery_price, office_delivery_price, free_delivery");
       if (error) throw error;
       const map: Record<string, { home: number; office: number; freeDelivery: boolean }> = {};
-      for (const w of data ?? []) {
-        map[w.code] = {
-          home: w.home_delivery_price,
-          office: w.office_delivery_price,
-          freeDelivery: w.free_delivery,
+      for (const row of data ?? []) {
+        map[row.wilaya_code] = {
+          home: row.home_delivery_price,
+          office: row.office_delivery_price,
+          freeDelivery: row.free_delivery,
         };
       }
       return map;
     },
     staleTime: 60_000,
-  });
-}
-
-// ─── Wilayas + Municipalities (public order form) ─────────────────────────────
-
-export function useWilayasForOrderForm() {
-  return useQuery({
-    queryKey: ["wilayas-order-form"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("wilayas")
-        .select("id, code, name_ar, name_en, municipalities(id, name_ar, name_en, is_enabled)")
-        .order("display_order");
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 5 * 60_000,
   });
 }
