@@ -29,11 +29,22 @@ export const Route = createFileRoute("/offers/$offerId")({
 
 function OfferDetailsPage() {
   const { offerId } = Route.useParams();
-  const { data: offers = [] } = useOffers(false);
+  const { data: offers = [], isLoading } = useOffers(false);
   const localize = useLocalized();
   const { t } = useI18n();
 
   const offer = offers.find((o) => o.id === offerId);
+
+  if (isLoading && !offer) {
+    return (
+      <SiteLayout>
+        <div className="mx-auto max-w-3xl px-6 pt-20 pb-20 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+        </div>
+      </SiteLayout>
+    );
+  }
+
   if (!offer) throw notFound();
 
   const price =
