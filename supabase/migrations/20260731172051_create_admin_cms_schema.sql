@@ -244,54 +244,6 @@ CREATE POLICY "anon_update_discounts" ON discounts FOR UPDATE TO anon, authentic
 DROP POLICY IF EXISTS "anon_delete_discounts" ON discounts;
 CREATE POLICY "anon_delete_discounts" ON discounts FOR DELETE TO anon, authenticated USING (true);
 
--- ─── Wilayas ─────────────────────────────────────────────────────────────────
-
-CREATE TABLE IF NOT EXISTS wilayas (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  code text UNIQUE NOT NULL,
-  name_ar text NOT NULL,
-  name_en text NOT NULL,
-  home_delivery_price integer NOT NULL DEFAULT 600,
-  office_delivery_price integer NOT NULL DEFAULT 400,
-  free_delivery boolean NOT NULL DEFAULT false,
-  display_order integer NOT NULL DEFAULT 0
-);
-
-ALTER TABLE wilayas ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "anon_select_wilayas" ON wilayas;
-CREATE POLICY "anon_select_wilayas" ON wilayas FOR SELECT TO anon, authenticated USING (true);
-DROP POLICY IF EXISTS "anon_insert_wilayas" ON wilayas;
-CREATE POLICY "anon_insert_wilayas" ON wilayas FOR INSERT TO anon, authenticated WITH CHECK (true);
-DROP POLICY IF EXISTS "anon_update_wilayas" ON wilayas;
-CREATE POLICY "anon_update_wilayas" ON wilayas FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "anon_delete_wilayas" ON wilayas;
-CREATE POLICY "anon_delete_wilayas" ON wilayas FOR DELETE TO anon, authenticated USING (true);
-
--- ─── Municipalities ──────────────────────────────────────────────────────────
-
-CREATE TABLE IF NOT EXISTS municipalities (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  wilaya_id uuid NOT NULL REFERENCES wilayas(id) ON DELETE CASCADE,
-  name_ar text NOT NULL,
-  name_en text NOT NULL,
-  is_enabled boolean NOT NULL DEFAULT true,
-  display_order integer NOT NULL DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS municipalities_wilaya_id_idx ON municipalities(wilaya_id);
-
-ALTER TABLE municipalities ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "anon_select_municipalities" ON municipalities;
-CREATE POLICY "anon_select_municipalities" ON municipalities FOR SELECT TO anon, authenticated USING (true);
-DROP POLICY IF EXISTS "anon_insert_municipalities" ON municipalities;
-CREATE POLICY "anon_insert_municipalities" ON municipalities FOR INSERT TO anon, authenticated WITH CHECK (true);
-DROP POLICY IF EXISTS "anon_update_municipalities" ON municipalities;
-CREATE POLICY "anon_update_municipalities" ON municipalities FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "anon_delete_municipalities" ON municipalities;
-CREATE POLICY "anon_delete_municipalities" ON municipalities FOR DELETE TO anon, authenticated USING (true);
-
 -- ─── Contact Settings (singleton) ────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS contact_settings (
