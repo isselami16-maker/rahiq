@@ -84,7 +84,7 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
 
     const res = await sendOrderEmail(order);
     setSubmitting(false);
-    setResult({ ok: res.success, msg: res.success ? t("order.success") : t("order.error") });
+    setResult({ ok: res.success, msg: res.success ? t("order.success") : res.message });
     if (res.success) {
       setFullName("");
       setPhone("");
@@ -129,7 +129,16 @@ export function OrderForm({ offer }: { offer: OfferProp }) {
             type="tel"
             required
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+              const formatted = digits.length > 4
+                ? digits.slice(0, 4) +
+                  (digits.length > 4 ? " " + digits.slice(4, 6) : "") +
+                  (digits.length > 6 ? " " + digits.slice(6, 8) : "") +
+                  (digits.length > 8 ? " " + digits.slice(8, 10) : "")
+                : digits;
+              setPhone(formatted.trim());
+            }}
             placeholder={t("order.phonePlaceholder")}
             className={inputClass}
             dir="ltr"

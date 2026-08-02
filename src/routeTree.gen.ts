@@ -19,7 +19,6 @@ import { Route as AdminAlgeriaRouteImport } from './routes/admin/algeria'
 import { Route as AdminContactsRouteImport } from './routes/admin/contacts'
 import { Route as AdminDeliveryRouteImport } from './routes/admin/delivery'
 import { Route as AdminDiscountsRouteImport } from './routes/admin/discounts'
-import { Route as AdminEmailRouteImport } from './routes/admin/email'
 import { Route as AdminFooterRouteImport } from './routes/admin/footer'
 import { Route as AdminMediaRouteImport } from './routes/admin/media'
 import { Route as AdminOffersRouteImport } from './routes/admin/offers'
@@ -77,11 +76,6 @@ const AdminDiscountsRoute = AdminDiscountsRouteImport.update({
   path: '/admin/discounts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminEmailRoute = AdminEmailRouteImport.update({
-  id: '/admin/email',
-  path: '/admin/email',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminFooterRoute = AdminFooterRouteImport.update({
   id: '/admin/footer',
   path: '/admin/footer',
@@ -123,7 +117,6 @@ export interface FileRoutesByFullPath {
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/discounts': typeof AdminDiscountsRoute
-  '/admin/email': typeof AdminEmailRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/offers': typeof AdminOffersRoute
@@ -142,7 +135,6 @@ export interface FileRoutesByTo {
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/discounts': typeof AdminDiscountsRoute
-  '/admin/email': typeof AdminEmailRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/offers': typeof AdminOffersRoute
@@ -162,7 +154,6 @@ export interface FileRoutesById {
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/discounts': typeof AdminDiscountsRoute
-  '/admin/email': typeof AdminEmailRoute
   '/admin/footer': typeof AdminFooterRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/offers': typeof AdminOffersRoute
@@ -183,7 +174,6 @@ export interface FileRouteTypes {
     | '/admin/contacts'
     | '/admin/delivery'
     | '/admin/discounts'
-    | '/admin/email'
     | '/admin/footer'
     | '/admin/media'
     | '/admin/offers'
@@ -202,7 +192,6 @@ export interface FileRouteTypes {
     | '/admin/contacts'
     | '/admin/delivery'
     | '/admin/discounts'
-    | '/admin/email'
     | '/admin/footer'
     | '/admin/media'
     | '/admin/offers'
@@ -221,7 +210,6 @@ export interface FileRouteTypes {
     | '/admin/contacts'
     | '/admin/delivery'
     | '/admin/discounts'
-    | '/admin/email'
     | '/admin/footer'
     | '/admin/media'
     | '/admin/offers'
@@ -241,7 +229,6 @@ export interface RootRouteChildren {
   AdminContactsRoute: typeof AdminContactsRoute
   AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminDiscountsRoute: typeof AdminDiscountsRoute
-  AdminEmailRoute: typeof AdminEmailRoute
   AdminFooterRoute: typeof AdminFooterRoute
   AdminMediaRoute: typeof AdminMediaRoute
   AdminOffersRoute: typeof AdminOffersRoute
@@ -322,13 +309,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDiscountsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/email': {
-      id: '/admin/email'
-      path: '/admin/email'
-      fullPath: '/admin/email'
-      preLoaderRoute: typeof AdminEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/footer': {
       id: '/admin/footer'
       path: '/admin/footer'
@@ -395,7 +375,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminContactsRoute: AdminContactsRoute,
   AdminDeliveryRoute: AdminDeliveryRoute,
   AdminDiscountsRoute: AdminDiscountsRoute,
-  AdminEmailRoute: AdminEmailRoute,
   AdminFooterRoute: AdminFooterRoute,
   AdminMediaRoute: AdminMediaRoute,
   AdminOffersRoute: AdminOffersRoute,

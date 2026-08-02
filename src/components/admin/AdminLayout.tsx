@@ -11,7 +11,6 @@ import {
   Phone,
   PanelBottom,
   Settings,
-  Mail,
   Image,
   Menu,
   X,
@@ -30,7 +29,6 @@ const NAV_ITEMS = [
   { to: "/admin/contacts", label: "Contact Info", icon: Phone, exact: false },
   { to: "/admin/footer", label: "Footer", icon: PanelBottom, exact: false },
   { to: "/admin/settings", label: "Brand Settings", icon: Settings, exact: false },
-  { to: "/admin/email", label: "Email Settings", icon: Mail, exact: false },
   { to: "/admin/media", label: "Media Library", icon: Image, exact: false },
 ] as const;
 

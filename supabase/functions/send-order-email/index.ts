@@ -6,18 +6,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-/**
- * Edge Function: send-order-email
- *
- * Receives order data from the frontend and sends it via SMTP to the
- * configured recipient email. SMTP credentials are read from environment
- * variables (set as Supabase Edge Function secrets):
- *
- *   SMTP_HOST, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD, RECIPIENT_EMAIL
- *
- * Until secrets are configured, this function returns a 200 with a message
- * indicating the order was received but email sending is not yet configured.
- */
+interface OrderPayload {
+  offerId?: string;
+  offerName?: string;
+  fullName?: string;
+  phone?: string;
+  wilaya?: string;
+  commune?: string;
+  deliveryType?: string;
+  quantity?: number;
+  unitPrice?: number;
+  deliveryPrice?: number;
+  total?: number;
+  orderDateTime?: string;
+  subject?: string;
+  body?: string;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -25,7 +29,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const body = await req.json();
+    const body = (await req.json()) as OrderPayload;
 
     const smtpHost = Deno.env.get("SMTP_HOST");
     const smtpPort = Deno.env.get("SMTP_PORT");
@@ -33,44 +37,117 @@ Deno.serve(async (req: Request) => {
     const smtpPassword = Deno.env.get("SMTP_PASSWORD");
     const recipientEmail = Deno.env.get("RECIPIENT_EMAIL");
 
-    if (!smtpHost || !smtpEmail || !recipientEmail) {
+    if (!smtpHost || !smtpPort || !smtpEmail || !smtpPassword || !recipientEmail) {
+      console.error("[send-order-email] Missing SMTP secrets. Configure SMTP_HOST, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD, RECIPIENT_EMAIL in Edge Function secrets.");
       return new Response(
         JSON.stringify({
-          success: true,
-          message: "Order received. Email sending not yet configured.",
+          success: false,
+          message: "Email sending is not configured. Please contact the store directly.",
         }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Build the email content
-    const emailBody = [
-      `New Order — ${body.subject ?? "RAHIQ Parfums"}`,
-      "",
-      body.body ?? JSON.stringify(body, null, 2),
-      "",
-      "---",
-      "This order was submitted from the RAHIQ Parfums website.",
+    const subject = body.subject ?? `New order — ${body.offerName ?? "RAHIQ Parfums"}`;
+    const emailBody = body.body ?? [
+      `New Order — RAHIQ Parfums`,
+      ``,
+      `Offer: ${body.offerName ?? "N/A"}`,
+      `Name: ${body.fullName ?? "N/A"}`,
+      `Phone: ${body.phone ?? "N/A"}`,
+      `Wilaya: ${body.wilaya ?? "N/A"}`,
+      `Commune: ${body.commune ?? "N/A"}`,
+      `Delivery: ${body.deliveryType ?? "N/A"}`,
+      `Quantity: ${body.quantity ?? 1}`,
+      `Unit price: ${body.unitPrice ?? 0} DA`,
+      `Delivery: ${body.deliveryPrice === 0 ? "Free" : `${body.deliveryPrice ?? 0} DA`}`,
+      `Total: ${body.total ?? 0} DA`,
+      `Date: ${body.orderDateTime ? new Date(body.orderDateTime).toLocaleString() : new Date().toLocaleString()}`,
+      ``,
+      `---`,
+      `This order was submitted from the RAHIQ Parfums website.`,
     ].join("\n");
 
-    // Use SMTP via a simple fetch to an SMTP relay or nodemailer-equivalent.
-    // In production, replace this with a proper SMTP client.
-    // For now, we log and return success.
-    console.log(`[send-order-email] Would send to ${recipientEmail} via ${smtpHost}:${smtpPort}`);
-    console.log(`[send-order-email] Body: ${emailBody}`);
+    const sent = await sendViaSmtp({
+      host: smtpHost,
+      port: Number(smtpPort),
+      email: smtpEmail,
+      password: smtpPassword,
+      to: recipientEmail,
+      subject,
+      body: emailBody,
+    });
+
+    if (!sent) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Failed to send email. Please try again later.",
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Order sent successfully.",
+        message: "Your order has been submitted successfully. We will contact you soon.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[send-order-email] Error:", message);
     return new Response(
-      JSON.stringify({ success: false, message }),
+      JSON.stringify({ success: false, message: "An unexpected error occurred." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
+
+async function sendViaSmtp(opts: {
+  host: string;
+  port: number;
+  email: string;
+  password: string;
+  to: string;
+  subject: string;
+  body: string;
+}): Promise<boolean> {
+  const { SmtpClient } = await import("https://deno.land/x/smtp@v0.7.0/mod.ts");
+
+  const client = new SmtpClient();
+  try {
+    await client.connect({
+      hostname: opts.host,
+      port: opts.port,
+      username: opts.email,
+      password: opts.password,
+      useTLS: opts.port === 465,
+      useSTARTTLS: opts.port !== 465,
+    });
+
+    await client.send({
+      from: opts.email,
+      to: opts.to,
+      subject: opts.subject,
+      content: opts.body,
+      html: `<pre style="font-family: monospace; white-space: pre-wrap;">${escapeHtml(opts.body)}</pre>`,
+    });
+
+    client.close();
+    return true;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[send-order-email] SMTP error:", message);
+    try { client.close(); } catch { /* ignore */ }
+    return false;
+  }
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
